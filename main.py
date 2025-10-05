@@ -20,12 +20,8 @@ class MyClient(discord.Client):
             # add the role to the user
             await after.add_roles(role, reason="User has lamp tag")
             print(f"{after.name} has lamp tag")
-        else:
-            # ensure the user does have the role
-            if not after.get_role(1409425360126349483):
-                print(f"{after.name} didn't have lamp role")
-                return
-            # remove the role
+        elif after.get_role(1409425360126349483):
+            # if the user has the role and their tag is not lamp then remove it
             await after.remove_roles(role, reason="User removed lamp tag")
             print(f"{after.name} no longer has lamp tag and the role was removed")
 
