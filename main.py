@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import os
 import sys
+import csv
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 
@@ -18,14 +20,33 @@ class MyClient(discord.Client):
             sys.exit("Role not found in server!")
         has_role = after.get_role(1409425360126349483)
         has_tag = after.primary_guild.tag == "LAMP"
+        action = None
         if has_tag and not has_role:
-            # if the user updates their tag to "LAMP" then add the role
-            await after.add_roles(role, reason="User has lamp tag")
-            print(f"{after.name} has lamp tag, added role")
+            await after.add_roles(role, reason="User has LAMP tag")
+            print(f"{after.name} has LAMP tag, added role")
+            action = "added"
         elif has_role and not has_tag:
-            # if the user has the role and their tag is not lamp then remove the role
-            await after.remove_roles(role, reason="User removed lamp tag")
-            print(f"{after.name} no longer has lamp tag, removed role")
+            await after.remove_roles(role, reason="User removed LAMP tag")
+            print(f"{after.name} no longer has LAMP tag, removed role")
+            action = "removed"
+
+        if action:
+            self.record_event(after, action)
+
+    def record_event(self, member: discord.Member, action: str):
+        """Record a single event (role added/removed) to a CSV file."""
+        filename = "stats.csv"
+        file_exists = os.path.isfile(filename)
+
+        with open(filename, mode="a", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            # write header if file is new
+            if not file_exists:
+                writer.writerow(["timestamp", "user_id", "user_name", "action"])
+            writer.writerow(
+                [datetime.now(timezone.utc).isoformat(), member.id, member.name, action]
+            )
+        print(f"Logged {action} event for {member.name}")
 
 
 # Initialize your bot
@@ -33,7 +54,7 @@ class MyClient(discord.Client):
 intents = discord.Intents.default()
 intents.members = True
 # get token
-load_dotenv()
+_ = load_dotenv()
 tok = os.getenv("TOKEN")
 if not tok:
     sys.exit("No env token found")
